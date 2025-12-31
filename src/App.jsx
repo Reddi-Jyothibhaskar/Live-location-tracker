@@ -2,28 +2,35 @@ import { useEffect, useState } from "react";
 import MapView from "./MapView";
 
 export default function App() {
-  const [position, setPosition] = useState([17.6868, 83.2185]);
+  const [position, setPosition] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const watchId = navigator.geolocation.watchPosition(
+    if (!navigator.geolocation) {
+      setError("Geolocation not supported");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const coords = [
+        setPosition([
           pos.coords.latitude,
           pos.coords.longitude,
-        ];
-        setPosition(coords);
+        ]);
       },
       (err) => {
-        console.error("Location error:", err);
+        setError(err.message);
       },
       {
-        enableHighAccuracy: true,
+        enableHighAccuracy: false,
+        timeout: 30000,
+        maximumAge: 60000,
       }
     );
-
-    // Cleanup watcher on unmount
-    return () => navigator.geolocation.clearWatch(watchId);
   }, []);
+
+  if (error) return <p>Error: {error}</p>;
+  if (!position) return <p>Fetching location…</p>;
 
   return <MapView position={position} />;
 }
